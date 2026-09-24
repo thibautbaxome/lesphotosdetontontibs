@@ -15,7 +15,7 @@ Albums photo et vidéo partagés en pleine qualité. Tu crées un album, tu envo
 - Les vignettes et l'aperçu (2048 px) sont générés sur le téléphone de l'invité au moment de l'envoi. Résultat : un iPhone HEIC s'affiche bien sur un PC Windows, alors que Chrome ne sait pas lire le HEIC.
 - **Gros fichiers** : envoi en morceaux de 25 Mo, avec reprise automatique en cas de coupure réseau. Pas de limite pratique (garde-fou à 20 Go par fichier).
 - **Pendant l'envoi**, l'écran reste allumé (Wake Lock), mais il faut garder la page ouverte : si l'invité change d'appli, iOS met l'envoi en pause.
-- **Point de vigilance iPhone** : en passant par la photothèque, iOS peut réduire la qualité de certaines vidéos avant de les confier au navigateur (on voit alors « Compression… »). C'est un comportement du système, qu'aucun site web ne peut bloquer. Pour garantir l'original : avant de valider, toucher « Options » dans le sélecteur de photos et choisir le format « Actuel » s'il est proposé, ou passer par l'app Fichiers. À tester sur ton iPhone.
+- **Point de vigilance iPhone** : en passant par la photothèque, iOS peut réduire la qualité de certaines vidéos avant de les confier au navigateur (on voit alors « Compression… »). C'est un comportement du système, qu'aucun site web ne peut bloquer. Le site affiche un bandeau « Ton téléphone prépare tes photos… » pendant cette étape.
 
 ## Design
 

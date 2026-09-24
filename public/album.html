@@ -450,31 +450,19 @@ $('#selZip').onclick = () => zipItems(state.media.filter((m) => selected.has(m.i
 async function saveItems(items, btn) {
   if (!items.length) return;
   if (!canShareFiles) { items.forEach((m, i) => setTimeout(() => dl(m), i * 400)); return; }
-  // iOS exige un geste juste avant chaque partage : on prépare un lot, puis on redemande un tap.
-  // Lots de 20 pour ne pas saturer la mémoire du téléphone.
-  const BATCH = 20;
-  const lots = [];
-  for (let i = 0; i < items.length; i += BATCH) lots.push(items.slice(i, i + BATCH));
+  // iOS exige un geste juste avant le partage : on prépare tout, puis on redemande un tap.
   const html = btn.innerHTML, handler = btn.onclick;
+  btn.disabled = true;
   try {
-    for (const [k, lot] of lots.entries()) {
-      btn.disabled = true;
-      const files = [];
-      for (const [i, m] of lot.entries()) {
-        btn.textContent = lots.length > 1
-          ? `Lot ${k + 1}/${lots.length} · ${i + 1} sur ${lot.length}`
-          : `Préparation ${i + 1} sur ${lot.length}`;
-        const b = await (await fetch(origUrl(m))).blob();
-        files.push(new File([b], m.name, { type: m.type || b.type }));
-      }
-      if (!navigator.canShare({ files })) throw new Error('unsupported');
-      btn.disabled = false;
-      btn.innerHTML = `${icon('share')}${lots.length > 1 ? `Lot ${k + 1}/${lots.length} prêt, touche ici` : 'Prêt, touche ici'}`;
-      const ok = await new Promise((resolve) => {
-        btn.onclick = async () => { try { await navigator.share({ files }); resolve(true); } catch (e) { resolve(e.name !== 'AbortError'); } };
-      });
-      if (!ok) break;
+    const files = [];
+    for (const [i, m] of items.entries()) {
+      btn.textContent = `Préparation ${i + 1} sur ${items.length}`;
+      const b = await (await fetch(origUrl(m))).blob();
+      files.push(new File([b], m.name, { type: m.type || b.type }));
     }
+    if (!navigator.canShare({ files })) throw new Error('unsupported');
+    btn.disabled = false; btn.innerHTML = `${icon('share')}Prêt, touche ici`;
+    await new Promise((resolve) => { btn.onclick = async () => { try { await navigator.share({ files }); } catch {} resolve(); }; });
   } catch {
     items.forEach((m, i) => setTimeout(() => dl(m), i * 400));
   } finally {

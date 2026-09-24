@@ -23,4 +23,5 @@ database_id = "81d2a2a2-363f-45c5-9633-b47fc19d999f"
 # Nom de domaine (branché automatiquement à chaque déploiement, HTTPS compris)
 routes = [
   { pattern = "lesphotosdetontontibs.com", custom_domain = true },
+  { pattern = "www.lesphotosdetontontibs.com", custom_domain = true },
 ]

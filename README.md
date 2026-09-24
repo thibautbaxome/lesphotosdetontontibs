@@ -1,6 +1,6 @@
 # Les photos de Tonton Tibs
 
-(`lesphotosdetontontibs.fr`, nom de code technique : tribu)
+(`lesphotosdetontontibs.com`, nom de code technique : tribu)
 
 Albums photo et vidéo partagés en pleine qualité. Tu crées un album, tu envoies le lien, chacun ajoute ses photos et vidéos depuis son téléphone (iPhone, Android, ordinateur), sans compte ni appli.
 

@@ -34,7 +34,7 @@ Un lien, zéro compte, pleine qualité, iPhone et Android à égalité. Site fam
 
 ## Brand Commitments
 
-- Nom : **Les photos de Tonton Tibs**, domaine `lesphotosdetontontibs.fr`. Ton familial, complice, en français, tutoiement.
+- Nom : **Les photos de Tonton Tibs**, domaine `lesphotosdetontontibs.com`. Ton familial, complice, en français, tutoiement.
 
 ## Evidence on Hand
 

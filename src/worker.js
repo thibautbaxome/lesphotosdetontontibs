@@ -8,6 +8,11 @@ const SESSION_DAYS = 30;
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    // Une seule adresse : www.lesphotosdetontontibs.com renvoie vers lesphotosdetontontibs.com
+    if (url.hostname.startsWith('www.')) {
+      url.hostname = url.hostname.slice(4);
+      return Response.redirect(url.toString(), 301);
+    }
     const p = url.pathname;
     try {
       if (p.startsWith('/a/')) {
@@ -58,7 +63,9 @@ async function api(request, env, url) {
 
   // ---------- Public (par lien) ----------
   if (parts[0] === 'a' && parts[1]) {
-    const album = await env.DB.prepare('SELECT * FROM albums WHERE token = ?').bind(parts[1]).first();
+    // tolère un caractère parasite collé au lien (ponctuation, espace insécable…)
+    const tok = (decodeURIComponent(parts[1]).match(/[A-Za-z0-9]{24}/) || [parts[1]])[0];
+    const album = await env.DB.prepare('SELECT * FROM albums WHERE token = ?').bind(tok).first();
     if (!album) throw new HttpError(404, 'Album introuvable');
     return publicApi(request, env, album, parts.slice(2), m);
   }

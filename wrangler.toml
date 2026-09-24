@@ -3,6 +3,10 @@ main = "src/worker.js"
 account_id = "fe7eaf69dc1c96623ac4c92b3b282285"
 compatibility_date = "2026-09-01"
 
+# Une seule adresse publique : la tienne (pas de *.workers.dev ni d'URL de préversion)
+workers_dev = false
+preview_urls = false
+
 # Nom de domaine (branché automatiquement à chaque déploiement, HTTPS compris)
 routes = [
   { pattern = "lesphotosdetontontibs.com", custom_domain = true },

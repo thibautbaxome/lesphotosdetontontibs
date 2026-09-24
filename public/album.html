@@ -92,7 +92,7 @@
 </div>
 
 <script type="module">
-const token = location.pathname.split('/')[2];
+const token = (decodeURIComponent(location.pathname).match(/\/a\/([A-Za-z0-9]{24})/) || [])[1] || location.pathname.split('/')[2];
 const base = `/api/a/${token}`;
 const $ = (s) => document.querySelector(s);
 const icon = (n) => `<svg class="i"><use href="/icons.svg#${n}"/></svg>`;

@@ -97,6 +97,7 @@ async function load() {
           <span>${a.count ? `${a.count} fichier${a.count > 1 ? 's' : ''} · ${fmtBytes(a.bytes)}` : 'Vide pour l\'instant'}</span>
           <span>${date}</span>
           <span class="pill ${a.uploads_open ? 'open' : 'shut'}">${a.uploads_open ? 'Ajouts ouverts' : 'Ajouts fermés'}</span>
+          <span class="pill dl ${a.allow_download !== 0 ? 'open' : 'shut'}">${a.allow_download !== 0 ? 'Tout télécharger : oui' : 'Tout télécharger : non'}</span>
         </div>
       </div>
         <div class="actions">
@@ -106,6 +107,7 @@ async function load() {
         <div class="more">
           <a class="btn bare" href="/a/${a.token}">Voir l'album</a>
           <button class="bare" data-act="toggle">${a.uploads_open ? 'Fermer les ajouts' : 'Rouvrir les ajouts'}</button>
+          <button class="bare" data-act="toggle-dl">${a.allow_download !== 0 ? 'Masquer « Tout télécharger »' : 'Proposer « Tout télécharger »'}</button>
           <button class="bare" data-act="rename">Renommer</button>
           <button class="bare" data-act="rotate">Nouveau lien</button>
           <button class="bare danger" data-act="delete">Supprimer</button>
@@ -120,6 +122,7 @@ $('#albums').addEventListener('click', async (e) => {
   const { id, token, title } = card.dataset;
   const link = `${location.origin}/a/${token}`;
   const open = card.querySelector('.pill').classList.contains('open');
+  const dlOn = card.querySelector('.pill.dl').classList.contains('open');
   switch (el.dataset.act) {
     case 'share':
       if (navigator.share) { try { await navigator.share({ title, text: `Mets tes photos et vidéos de « ${title} » ici, en pleine qualité :`, url: link }); } catch {} break; }
@@ -127,6 +130,9 @@ $('#albums').addEventListener('click', async (e) => {
     case 'copy':
       try { await navigator.clipboard.writeText(link); toast('Lien copié'); } catch { prompt('Copie ce lien :', link); }
       break;
+    case 'toggle-dl':
+      await api(`/admin/albums/${id}`, { method: 'PATCH', body: { allow_download: !dlOn } });
+      toast(dlOn ? '« Tout télécharger » masqué pour les invités' : '« Tout télécharger » proposé aux invités'); load(); break;
     case 'toggle':
       await api(`/admin/albums/${id}`, { method: 'PATCH', body: { uploads_open: !open } });
       toast(open ? 'Album en lecture seule' : 'Ajouts rouverts'); load(); break;

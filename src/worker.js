@@ -32,7 +32,16 @@ class HttpError extends Error {
   constructor(status, message) { super(message); this.status = status; }
 }
 
+// Petite migration automatique : ajoute les colonnes manquantes sur une base existante.
+let migrated = false;
+async function migrate(env) {
+  if (migrated) return;
+  try { await env.DB.prepare('ALTER TABLE albums ADD COLUMN allow_download INTEGER NOT NULL DEFAULT 1').run(); } catch {}
+  migrated = true;
+}
+
 async function api(request, env, url) {
+  await migrate(env);
   const m = request.method;
   const parts = url.pathname.split('/').filter(Boolean).slice(1); // sans "api"
 
@@ -106,7 +115,8 @@ async function adminApi(request, env, parts, m) {
       const body = await request.json();
       const title = body.title != null ? String(body.title).trim().slice(0, 120) || album.title : album.title;
       const open = body.uploads_open != null ? (body.uploads_open ? 1 : 0) : album.uploads_open;
-      await env.DB.prepare('UPDATE albums SET title = ?, uploads_open = ? WHERE id = ?').bind(title, open, album.id).run();
+      const dl = body.allow_download != null ? (body.allow_download ? 1 : 0) : (album.allow_download ?? 1);
+      await env.DB.prepare('UPDATE albums SET title = ?, uploads_open = ?, allow_download = ? WHERE id = ?').bind(title, open, dl, album.id).run();
       return json({ ok: true });
     }
     if (m === 'DELETE') {
@@ -131,7 +141,7 @@ async function publicApi(request, env, album, parts, m) {
        FROM media WHERE album_id = ? AND status = 'ready' ORDER BY COALESCE(taken_at, created_at) ASC`
     ).bind(album.id).all();
     return json({
-      album: { title: album.title, uploads_open: !!album.uploads_open, part_size: PART_SIZE, created_at: album.created_at },
+      album: { title: album.title, uploads_open: !!album.uploads_open, allow_download: album.allow_download !== 0, part_size: PART_SIZE, created_at: album.created_at },
       admin,
       media: results,
     });
@@ -193,6 +203,11 @@ async function publicApi(request, env, album, parts, m) {
       if (buf.byteLength > 8 * 1024 * 1024) throw new HttpError(413, 'Vignette trop lourde');
       await env.BUCKET.put(`albums/${album.id}/${media.id}/${parts[2]}.jpg`, buf, { httpMetadata: { contentType: 'image/jpeg' } });
       await env.DB.prepare(`UPDATE media SET has_${parts[2]} = 1 WHERE id = ?`).bind(media.id).run();
+      const q = new URL(request.url).searchParams;
+      if (q.has('w') || q.has('h') || q.has('d')) {
+        await env.DB.prepare('UPDATE media SET width = COALESCE(?, width), height = COALESCE(?, height), duration = COALESCE(?, duration) WHERE id = ?')
+          .bind(int(q.get('w')), int(q.get('h')), num(q.get('d')), media.id).run();
+      }
       return json({ ok: true });
     }
 

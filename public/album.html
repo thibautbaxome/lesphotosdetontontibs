@@ -30,6 +30,7 @@
     </header>
 
     <div class="toolbar" id="toolbar">
+      <button id="dlAll" class="bare hidden"><svg class="i"><use href="/icons.svg#download"/></svg><span id="dlAllLabel">Tout télécharger</span></button>
       <div class="filter-note" id="filterNote"></div>
       <div class="spacer"></div>
       <button id="selBtn" class="bare"><svg class="i"><use href="/icons.svg#check"/></svg>Sélectionner</button>
@@ -55,10 +56,10 @@
 <div class="dock hidden" id="dock">
   <div class="inner">
     <div id="nameCard" class="panel hidden">
-      <label for="who">Comment tu t'appelles ? Ton prénom apparaîtra sur tes photos.</label>
+      <label for="who" id="whoLabel">Dernière étape : ton prénom, pour savoir qui a pris quoi.</label>
       <div class="row">
-        <input id="who" type="text" maxlength="60" placeholder="Ton prénom" autocomplete="given-name" enterkeyhint="go">
-        <button id="whoOk" class="ink">C'est moi</button>
+        <input id="who" type="text" maxlength="60" placeholder="Ton prénom" autocomplete="given-name" enterkeyhint="send">
+        <button id="whoOk" class="ink">Envoyer</button>
       </div>
     </div>
     <div id="queue" class="panel hidden" role="status" aria-live="polite">
@@ -66,9 +67,8 @@
       <div class="bar"><i id="qBar"></i></div>
       <div id="qHint" class="q-hint">Garde cette page ouverte pendant l'envoi.</div>
     </div>
-    <button id="addBtn" class="ink cta"><svg class="i"><use href="/icons.svg#camera"/></svg>J'apporte mes photos</button>
+    <label id="addBtn" class="btn ink cta pick"><svg class="i"><use href="/icons.svg#camera"/></svg>J'apporte mes photos<input id="file" type="file" multiple accept="image/*,video/*,image/heic,image/heif,.heic,.heif,.mov,.mp4" aria-label="Choisir mes photos et vidéos"></label>
     <p id="closedNote" class="closed-note hidden"><svg class="i"><use href="/icons.svg#lock"/></svg>Les ajouts sont fermés sur cet album</p>
-    <input id="file" type="file" multiple accept="image/*,video/*,image/heic,image/heif,.heic,.heif,.mov,.mp4" class="hidden">
   </div>
 </div>
 
@@ -178,6 +178,9 @@ function render() {
   const list = visible();
   $('#filterNote').innerHTML = filter ? `Les photos de <b>${esc(filter)}</b>` : '';
   $('#toolbar').classList.toggle('hidden', m.length === 0 || selecting);
+  const canDlAll = m.length > 0 && (state.album.allow_download || state.admin);
+  $('#dlAll').classList.toggle('hidden', !canDlAll);
+  $('#dlAllLabel').textContent = filter ? `Tout télécharger (${list.length})` : 'Tout télécharger';
   $('#empty').classList.toggle('hidden', m.length > 0);
 
   const existing = new Map([...$('#grid').children].map((el) => [el.dataset.id, el]));
@@ -214,23 +217,28 @@ const queue = [];
 let running = 0, totalBytes = 0, doneBytes = 0, filesTotal = 0, filesDone = 0, failed = 0;
 let wakeLock = null;
 
-$('#addBtn').onclick = () => {
-  if (!store.get('tribu_name')) { $('#nameCard').classList.remove('hidden'); $('#who').focus(); return; }
-  $('#file').click();
-};
+let pending = [];
+function askName(files) {
+  pending = files;
+  $('#whoLabel').textContent = `Dernière étape : ton prénom, pour savoir qui a pris ces ${plural(files.length, 'fichier', 'fichiers')}.`;
+  $('#nameCard').classList.remove('hidden');
+  $('#who').focus();
+}
 $('#whoOk').onclick = () => {
   const v = $('#who').value.trim();
   if (!v) { $('#who').focus(); return; }
   store.set('tribu_name', v);
   $('#nameCard').classList.add('hidden');
-  $('#file').click();
+  const files = pending; pending = [];
+  enqueue(files);
 };
 $('#who').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('#whoOk').click(); });
 
 $('#file').onchange = (e) => {
   const files = [...e.target.files];
   e.target.value = '';
-  enqueue(files);
+  if (!files.length) return;
+  if (!store.get('tribu_name')) askName(files); else enqueue(files);
 };
 function enqueue(files) {
   if (!files.length) return;
@@ -241,8 +249,9 @@ addEventListener('dragover', (e) => { e.preventDefault(); });
 addEventListener('drop', (e) => {
   e.preventDefault();
   if (!(state.album?.uploads_open || state.admin)) return;
-  if (!store.get('tribu_name')) { $('#nameCard').classList.remove('hidden'); $('#who').focus(); return; }
-  enqueue([...(e.dataTransfer?.files || [])].filter((f) => /^(image|video)\//.test(f.type) || /\.(heic|heif|mov|mp4)$/i.test(f.name)));
+  const files = [...(e.dataTransfer?.files || [])].filter((f) => /^(image|video)\//.test(f.type) || /\.(heic|heif|mov|mp4)$/i.test(f.name));
+  if (!files.length) return;
+  if (!store.get('tribu_name')) askName(files); else enqueue(files);
 });
 
 async function startQueue() {
@@ -250,7 +259,7 @@ async function startQueue() {
   $('#addBtn').disabled = false;
   updateProgress();
   try { wakeLock = await navigator.wakeLock?.request('screen'); } catch {}
-  while (running < 2 && queue.length) {
+  while (running < 3 && queue.length) {
     running++;
     uploadNext().finally(() => { running--; if (queue.length) startQueue(); else if (running === 0) finishQueue(); });
   }
@@ -286,14 +295,15 @@ addEventListener('beforeunload', (e) => { if (running || queue.length) { e.preve
 
 async function uploadFile(file) {
   const kind = file.type.startsWith('video/') || /\.(mov|mp4|m4v|webm|3gp)$/i.test(file.name) ? 'video' : 'image';
-  const visuals = await makeVisuals(file, kind).catch(() => ({}));
+  // les vignettes se calculent pendant l'envoi, pas avant : l'envoi démarre tout de suite
+  const visualsP = makeVisuals(file, kind).catch(() => ({}));
   const lm = file.lastModified;
   const takenAt = lm && lm < Date.now() - 10 * 60 * 1000 ? lm : null;
   const init = await api('/uploads', {
     method: 'POST', headers: { 'content-type': 'application/json' },
     body: JSON.stringify({
       name: file.name, type: file.type, size: file.size, uploader: (store.get('tribu_name') || '').trim(),
-      owner_key: ownerKey, width: visuals.width, height: visuals.height, duration: visuals.duration, taken_at: takenAt,
+      owner_key: ownerKey, taken_at: takenAt,
     }),
   });
   const id = init.id, ps = init.part_size, n = init.parts;
@@ -308,7 +318,12 @@ async function uploadFile(file) {
       parts.push({ partNumber: res.partNumber, etag: res.etag });
     }
     await withRetry(() => api(`/uploads/${id}/complete`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ parts }) }));
-    if (visuals.thumb) await api(`/uploads/${id}/thumb`, { method: 'PUT', body: visuals.thumb }).catch(() => {});
+    const visuals = await visualsP;
+    const q = new URLSearchParams();
+    if (visuals.width) q.set('w', visuals.width);
+    if (visuals.height) q.set('h', visuals.height);
+    if (visuals.duration) q.set('d', visuals.duration);
+    if (visuals.thumb) await api(`/uploads/${id}/thumb?${q}`, { method: 'PUT', body: visuals.thumb }).catch(() => {});
     if (visuals.preview) await api(`/uploads/${id}/preview`, { method: 'PUT', body: visuals.preview }).catch(() => {});
   } catch (e) {
     fetch(`${base}/uploads/${id}`, { method: 'DELETE' }).catch(() => {});
@@ -435,25 +450,42 @@ $('#selZip').onclick = () => zipItems(state.media.filter((m) => selected.has(m.i
 async function saveItems(items, btn) {
   if (!items.length) return;
   if (!canShareFiles) { items.forEach((m, i) => setTimeout(() => dl(m), i * 400)); return; }
-  // iOS exige un geste juste avant le partage : on prépare, puis on redemande un tap.
+  // iOS exige un geste juste avant chaque partage : on prépare un lot, puis on redemande un tap.
+  // Lots de 20 pour ne pas saturer la mémoire du téléphone.
+  const BATCH = 20;
+  const lots = [];
+  for (let i = 0; i < items.length; i += BATCH) lots.push(items.slice(i, i + BATCH));
   const html = btn.innerHTML, handler = btn.onclick;
-  btn.disabled = true;
   try {
-    const files = [];
-    for (const [i, m] of items.entries()) {
-      btn.textContent = `Préparation ${i + 1} sur ${items.length}`;
-      const b = await (await fetch(origUrl(m))).blob();
-      files.push(new File([b], m.name, { type: m.type || b.type }));
+    for (const [k, lot] of lots.entries()) {
+      btn.disabled = true;
+      const files = [];
+      for (const [i, m] of lot.entries()) {
+        btn.textContent = lots.length > 1
+          ? `Lot ${k + 1}/${lots.length} · ${i + 1} sur ${lot.length}`
+          : `Préparation ${i + 1} sur ${lot.length}`;
+        const b = await (await fetch(origUrl(m))).blob();
+        files.push(new File([b], m.name, { type: m.type || b.type }));
+      }
+      if (!navigator.canShare({ files })) throw new Error('unsupported');
+      btn.disabled = false;
+      btn.innerHTML = `${icon('share')}${lots.length > 1 ? `Lot ${k + 1}/${lots.length} prêt, touche ici` : 'Prêt, touche ici'}`;
+      const ok = await new Promise((resolve) => {
+        btn.onclick = async () => { try { await navigator.share({ files }); resolve(true); } catch (e) { resolve(e.name !== 'AbortError'); } };
+      });
+      if (!ok) break;
     }
-    if (!navigator.canShare({ files })) throw new Error('unsupported');
-    btn.disabled = false; btn.innerHTML = `${icon('share')}Prêt, touche ici`;
-    await new Promise((resolve) => { btn.onclick = async () => { try { await navigator.share({ files }); } catch {} resolve(); }; });
   } catch {
     items.forEach((m, i) => setTimeout(() => dl(m), i * 400));
   } finally {
     btn.disabled = false; btn.innerHTML = html; btn.onclick = handler;
   }
 }
+$('#dlAll').onclick = () => {
+  const items = visible();
+  if (isTouch && canShareFiles) saveItems(items, $('#dlAll'));
+  else zipItems(items);
+};
 function dl(m) {
   const a = document.createElement('a'); a.href = origUrl(m, true); a.download = m.name;
   document.body.appendChild(a); a.click(); a.remove();
@@ -477,7 +509,8 @@ async function zipItems(items) {
     } catch (e) { if (e.name === 'AbortError') return; }
   }
   const blob = await resp.blob();
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = fname; a.click();
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = fname;
+  document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 60000);
 }
 

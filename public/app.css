@@ -136,7 +136,7 @@ input:focus { outline: none; border-color: var(--ink); }
 /* ----- Barre d'envoi fixe ----- */
 .dock { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; padding: 16px max(16px, env(safe-area-inset-right)) calc(14px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); background: linear-gradient(to top, var(--paper) 55%, transparent); pointer-events: none; }
 .dock .inner { max-width: 560px; margin: 0 auto; pointer-events: auto; }
-.panel { background: var(--paper-deep); border-radius: 0; padding: 14px 16px; margin-bottom: 10px; animation: toast .4s var(--ease); }
+.panel { background: var(--paper-deep); border-radius: 0; padding: 14px 16px; margin-bottom: 10px; animation: rise .4s var(--ease); }
 .panel label { display: block; font-weight: 700; font-size: 15px; margin-bottom: 8px; }
 .panel .row { display: flex; gap: 8px; }
 .q-top { display: flex; align-items: baseline; gap: 10px; font-weight: 700; }
@@ -219,3 +219,10 @@ input:focus { outline: none; border-color: var(--ink); }
 .brand { font-weight: 700; font-size: 15px; color: var(--soft); }
 .admin-bar { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; margin: 0 0 18px; padding: 10px 12px; background: var(--paper-press); font-size: 14px; font-weight: 600; color: var(--soft); }
 .admin-bar a { color: var(--ink); font-weight: 700; }
+
+/* Bouton d'ajout : le vrai champ fichier est posé sur le bouton, pour qu'iOS ancre son menu au bon endroit */
+.pick { position: relative; overflow: hidden; cursor: pointer; }
+.pick input[type=file] { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; font-size: 0; }
+.pick:focus-within { outline: 3px solid var(--ink); outline-offset: 3px; }
+#dlAll { padding: 0 8px 0 0; }
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } }

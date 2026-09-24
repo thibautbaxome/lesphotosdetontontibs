@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS albums (
   title TEXT NOT NULL,
   token TEXT NOT NULL UNIQUE,
   uploads_open INTEGER NOT NULL DEFAULT 1,
+  allow_download INTEGER NOT NULL DEFAULT 1,
   created_at INTEGER NOT NULL
 );
 

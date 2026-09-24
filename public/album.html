@@ -1,0 +1,566 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#1d3fd1" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#122a8f" media="(prefers-color-scheme: dark)">
+<title>Les photos de Tonton Tibs</title>
+<link rel="preload" href="/fonts/sofia-sans-extra-condensed-latin-900-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/sofia-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/app.css">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+<div class="wrap">
+  <section id="notFound" class="empty hidden">
+    <p class="brand">Les photos de Tonton Tibs</p>
+    <h1 class="display">Carton introuvable</h1>
+    <p>Ce lien ne mène à aucun album. Il a peut-être été remplacé : redemande-le à Tonton Tibs.</p>
+  </section>
+
+  <main id="main" class="hidden">
+    <p id="adminBar" class="admin-bar hidden"><a href="/">← Mes albums</a><span>Mode admin : tu peux supprimer n'importe quelle photo et ajouter même si l'album est fermé.</span></p>
+    <header class="invite">
+      <p class="lead" id="lead">Tonton Tibs t'invite à partager tes photos de</p>
+      <h1 class="display" id="title"></h1>
+      <div class="facts" id="facts"></div>
+      <div class="guests hidden" id="guests" aria-label="Filtrer par personne"></div>
+    </header>
+
+    <div class="toolbar" id="toolbar">
+      <div class="filter-note" id="filterNote"></div>
+      <div class="spacer"></div>
+      <button id="selBtn" class="bare"><svg class="i"><use href="/icons.svg#check"/></svg>Sélectionner</button>
+    </div>
+
+    <div id="selBar" class="selbar hidden">
+      <strong id="selCount">0 choisie</strong>
+      <div class="spacer"></div>
+      <button id="selAll" class="bare">Tout</button>
+      <button id="selZip" class="hidden"><svg class="i"><use href="/icons.svg#download"/></svg>Zip</button>
+      <button id="selSave" class="ink"><svg class="i"><use href="/icons.svg#download"/></svg>Enregistrer</button>
+      <p id="selHint" class="hint hidden">« Enregistrer » ouvre le menu de partage : choisis « Enregistrer » pour les ranger dans ta galerie, en pleine qualité.</p>
+    </div>
+
+    <div id="grid" class="grid"></div>
+    <section id="empty" class="empty hidden">
+      <h2 class="display">Personne n'a encore rien apporté</h2>
+      <p>Sois le premier : tes photos et vidéos partent en pleine qualité, sans compte ni appli.</p>
+    </section>
+  </main>
+</div>
+
+<div class="dock hidden" id="dock">
+  <div class="inner">
+    <div id="nameCard" class="panel hidden">
+      <label for="who">Comment tu t'appelles ? Ton prénom apparaîtra sur tes photos.</label>
+      <div class="row">
+        <input id="who" type="text" maxlength="60" placeholder="Ton prénom" autocomplete="given-name" enterkeyhint="go">
+        <button id="whoOk" class="ink">C'est moi</button>
+      </div>
+    </div>
+    <div id="queue" class="panel hidden" role="status" aria-live="polite">
+      <div class="q-top"><span id="qLabel"></span><span id="qPct" class="pct"></span></div>
+      <div class="bar"><i id="qBar"></i></div>
+      <div id="qHint" class="q-hint">Garde cette page ouverte pendant l'envoi.</div>
+    </div>
+    <button id="addBtn" class="ink cta"><svg class="i"><use href="/icons.svg#camera"/></svg>J'apporte mes photos</button>
+    <p id="closedNote" class="closed-note hidden"><svg class="i"><use href="/icons.svg#lock"/></svg>Les ajouts sont fermés sur cet album</p>
+    <input id="file" type="file" multiple accept="image/*,video/*,image/heic,image/heif,.heic,.heif,.mov,.mp4" class="hidden">
+  </div>
+</div>
+
+<div id="viewer" class="viewer hidden" role="dialog" aria-modal="true" aria-label="Visionneuse">
+  <div class="top">
+    <button id="vClose" class="icon" aria-label="Fermer"><svg class="i"><use href="/icons.svg#x"/></svg></button>
+    <div class="spacer"></div>
+    <span id="vCount" class="count"></span>
+    <div class="spacer"></div>
+    <button id="vDel" class="icon danger hidden" aria-label="Supprimer"><svg class="i"><use href="/icons.svg#trash"/></svg></button>
+  </div>
+  <div class="stage" id="vStage">
+    <button class="nav prev" id="vPrev" aria-label="Précédente"><svg class="i"><use href="/icons.svg#left"/></svg></button>
+    <button class="nav next" id="vNext" aria-label="Suivante"><svg class="i"><use href="/icons.svg#right"/></svg></button>
+  </div>
+  <div class="bottom">
+    <div><div id="vWho" class="who"></div><div id="vMeta" class="meta"></div></div>
+    <div class="spacer"></div>
+    <button id="vSave" class="ink"><svg class="i"><use href="/icons.svg#download"/></svg>Enregistrer</button>
+  </div>
+</div>
+
+<script type="module">
+const token = location.pathname.split('/')[2];
+const base = `/api/a/${token}`;
+const $ = (s) => document.querySelector(s);
+const icon = (n) => `<svg class="i"><use href="/icons.svg#${n}"/></svg>`;
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch {} },
+};
+let ownerKey = store.get('tribu_owner');
+if (!ownerKey) { ownerKey = crypto.randomUUID(); store.set('tribu_owner', ownerKey); }
+let ownerHash = '';
+crypto.subtle.digest('SHA-256', new TextEncoder().encode(ownerKey)).then((b) => {
+  ownerHash = btoa(String.fromCharCode(...new Uint8Array(b))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+});
+
+let state = { album: null, admin: false, media: [] };
+let filter = null;          // prénom sélectionné dans la liste des invités
+let known = null;           // ids déjà affichés (pour l'effet « développement »)
+let knownGuests = null;
+const selected = new Set();
+let selecting = false;
+const isTouch = matchMedia('(hover: none)').matches;
+const canShareFiles = !!(navigator.canShare && navigator.canShare({ files: [new File([''], 'x.jpg', { type: 'image/jpeg' })] }));
+
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmtBytes = (b) => b < 1e6 ? `${Math.max(1, Math.round(b / 1e3))} Ko` : b < 1e7 ? `${(b / 1e6).toFixed(1).replace('.', ',')} Mo` : b < 1e9 ? `${(b / 1e6).toFixed(0)} Mo` : `${(b / 1e9).toFixed(1).replace('.', ',')} Go`;
+const fmtDur = (s) => s ? `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}` : '';
+const plural = (n, one, many) => `${n} ${n > 1 ? many : one}`;
+const visible = () => filter ? state.media.filter((m) => (m.uploader || '') === filter) : state.media;
+function toast(msg, ms = 2600) {
+  document.querySelectorAll('.toast').forEach((t) => t.remove());
+  const t = document.createElement('div'); t.className = 'toast'; t.setAttribute('role', 'status'); t.textContent = msg;
+  document.body.appendChild(t); setTimeout(() => t.remove(), ms);
+}
+async function api(path, opts = {}) {
+  const r = await fetch(base + path, opts);
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw Object.assign(new Error(data.error || `Erreur ${r.status}`), { status: r.status });
+  return data;
+}
+
+// ================== Chargement ==================
+async function load() {
+  try {
+    const d = await api('');
+    state = { album: d.album, admin: d.admin, media: d.media };
+  } catch (e) {
+    if (e.status === 404) { $('#notFound').classList.remove('hidden'); $('#main').classList.add('hidden'); $('#dock').classList.add('hidden'); return; }
+    return;
+  }
+  document.title = `${state.album.title} · Les photos de Tonton Tibs`;
+  $('#main').classList.remove('hidden');
+  $('#title').textContent = state.album.title;
+  $('#adminBar').classList.toggle('hidden', !state.admin);
+  const open = state.album.uploads_open || state.admin;
+  $('#lead').textContent = open ? 'Tonton Tibs t\'invite à partager tes photos de' : 'Les photos de';
+  $('#dock').classList.remove('hidden');
+  $('#addBtn').classList.toggle('hidden', !open);
+  $('#closedNote').classList.toggle('hidden', open);
+  if (filter && !state.media.some((m) => m.uploader === filter)) filter = null;
+  render();
+}
+
+function render() {
+  const m = state.media;
+  const photos = m.filter((x) => x.kind === 'image').length, videos = m.length - photos;
+  const date = new Date(state.album.created_at).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+  const facts = [`<span>${esc(date)}</span>`];
+  if (photos) facts.push(`<span>${plural(photos, 'photo', 'photos')}</span>`);
+  if (videos) facts.push(`<span>${plural(videos, 'vidéo', 'vidéos')}</span>`);
+  if (m.length) facts.push(`<span>${fmtBytes(m.reduce((a, x) => a + x.size, 0))}</span>`);
+  $('#facts').innerHTML = facts.join('<i class="sep" aria-hidden="true"></i>');
+
+  // Liste des invités
+  const counts = new Map();
+  m.forEach((x) => { const u = (x.uploader || '').trim(); if (u) counts.set(u, (counts.get(u) || 0) + 1); });
+  const names = [...counts.keys()];
+  $('#guests').classList.toggle('hidden', names.length === 0);
+  $('#guests').innerHTML = `<span class="with">avec</span>` + names.map((n, i) =>
+    `<button class="guest${knownGuests && !knownGuests.has(n) ? ' fresh' : ''}" data-name="${esc(n)}" aria-pressed="${filter === n}"><span class="n">${esc(n)}</span><small>${counts.get(n)}</small></button>${i < names.length - 1 ? '<span class="comma">,</span>' : ''}`
+  ).join('');
+  knownGuests = new Set(names);
+
+  const list = visible();
+  $('#filterNote').innerHTML = filter ? `Les photos de <b>${esc(filter)}</b>` : '';
+  $('#toolbar').classList.toggle('hidden', m.length === 0 || selecting);
+  $('#empty').classList.toggle('hidden', m.length > 0);
+
+  const existing = new Map([...$('#grid').children].map((el) => [el.dataset.id, el]));
+  const frag = document.createDocumentFragment();
+  list.forEach((x, i) => {
+    let el = existing.get(x.id);
+    if (!el) {
+      el = document.createElement('button');
+      el.className = 'tile' + (known && !known.has(x.id) ? ' new' : '');
+      el.dataset.id = x.id;
+      el.setAttribute('aria-label', `${x.kind === 'video' ? 'Vidéo' : 'Photo'}${x.uploader ? ' de ' + x.uploader : ''}`);
+      el.innerHTML = (x.has_thumb
+        ? `<img src="${base}/media/${x.id}/thumb" alt="" loading="lazy" decoding="async">`
+        : `<span class="ph">${icon(x.kind === 'video' ? 'play' : 'image')}</span>`)
+        + (x.kind === 'video' ? `<span class="badge">${icon('play')}${fmtDur(x.duration)}</span>` : '')
+        + `<span class="check">${icon('check')}</span>`;
+    }
+    el.dataset.i = i;
+    el.classList.toggle('sel', selected.has(x.id));
+    frag.appendChild(el);
+  });
+  $('#grid').replaceChildren(frag);
+  known = new Set(m.map((x) => x.id));
+}
+
+$('#guests').addEventListener('click', (e) => {
+  const g = e.target.closest('.guest'); if (!g) return;
+  filter = filter === g.dataset.name ? null : g.dataset.name;
+  render();
+});
+
+// ================== Ajout de fichiers ==================
+const queue = [];
+let running = 0, totalBytes = 0, doneBytes = 0, filesTotal = 0, filesDone = 0, failed = 0;
+let wakeLock = null;
+
+$('#addBtn').onclick = () => {
+  if (!store.get('tribu_name')) { $('#nameCard').classList.remove('hidden'); $('#who').focus(); return; }
+  $('#file').click();
+};
+$('#whoOk').onclick = () => {
+  const v = $('#who').value.trim();
+  if (!v) { $('#who').focus(); return; }
+  store.set('tribu_name', v);
+  $('#nameCard').classList.add('hidden');
+  $('#file').click();
+};
+$('#who').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('#whoOk').click(); });
+
+$('#file').onchange = (e) => {
+  const files = [...e.target.files];
+  e.target.value = '';
+  enqueue(files);
+};
+function enqueue(files) {
+  if (!files.length) return;
+  for (const f of files) { queue.push(f); totalBytes += f.size; filesTotal++; }
+  startQueue();
+}
+addEventListener('dragover', (e) => { e.preventDefault(); });
+addEventListener('drop', (e) => {
+  e.preventDefault();
+  if (!(state.album?.uploads_open || state.admin)) return;
+  if (!store.get('tribu_name')) { $('#nameCard').classList.remove('hidden'); $('#who').focus(); return; }
+  enqueue([...(e.dataTransfer?.files || [])].filter((f) => /^(image|video)\//.test(f.type) || /\.(heic|heif|mov|mp4)$/i.test(f.name)));
+});
+
+async function startQueue() {
+  $('#queue').classList.remove('hidden');
+  $('#addBtn').disabled = false;
+  updateProgress();
+  try { wakeLock = await navigator.wakeLock?.request('screen'); } catch {}
+  while (running < 2 && queue.length) {
+    running++;
+    uploadNext().finally(() => { running--; if (queue.length) startQueue(); else if (running === 0) finishQueue(); });
+  }
+}
+async function uploadNext() {
+  const file = queue.shift();
+  if (!file) return;
+  try { await uploadFile(file); filesDone++; }
+  catch (e) { console.error(e); failed++; toast(`${file.name} n'est pas passé : ${e.message}`, 4500); }
+  updateProgress();
+}
+function finishQueue() {
+  wakeLock?.release?.(); wakeLock = null;
+  const ok = filesDone, ko = failed;
+  $('#qLabel').textContent = ko ? `${plural(ok, 'fichier envoyé', 'fichiers envoyés')}, ${ko} en échec` : `Merci ${store.get('tribu_name') || ''} !`;
+  $('#qPct').textContent = '';
+  $('#qBar').style.transform = 'scaleX(1)';
+  $('#qHint').textContent = ko ? 'Réessaie avec les fichiers en échec, souvent une coupure réseau.' : `${plural(ok, 'fichier ajouté', 'fichiers ajoutés')} à l'album, en pleine qualité.`;
+  totalBytes = doneBytes = filesTotal = filesDone = failed = 0;
+  setTimeout(() => { if (running === 0 && !queue.length) $('#queue').classList.add('hidden'); }, 6000);
+  load();
+}
+const inflight = new Map();
+function updateProgress() {
+  const live = [...inflight.values()].reduce((a, b) => a + b, 0);
+  const ratio = totalBytes ? Math.min(.99, (doneBytes + live) / totalBytes) : 0;
+  $('#qLabel').textContent = `Envoi ${Math.min(filesDone + failed + 1, filesTotal)} sur ${filesTotal}`;
+  $('#qPct').textContent = `${Math.floor(ratio * 100)} % · ${fmtBytes(doneBytes + live)} sur ${fmtBytes(totalBytes)}`;
+  $('#qBar').style.transform = `scaleX(${ratio})`;
+  $('#qHint').textContent = "Garde cette page ouverte pendant l'envoi.";
+}
+addEventListener('beforeunload', (e) => { if (running || queue.length) { e.preventDefault(); e.returnValue = ''; } });
+
+async function uploadFile(file) {
+  const kind = file.type.startsWith('video/') || /\.(mov|mp4|m4v|webm|3gp)$/i.test(file.name) ? 'video' : 'image';
+  const visuals = await makeVisuals(file, kind).catch(() => ({}));
+  const lm = file.lastModified;
+  const takenAt = lm && lm < Date.now() - 10 * 60 * 1000 ? lm : null;
+  const init = await api('/uploads', {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      name: file.name, type: file.type, size: file.size, uploader: (store.get('tribu_name') || '').trim(),
+      owner_key: ownerKey, width: visuals.width, height: visuals.height, duration: visuals.duration, taken_at: takenAt,
+    }),
+  });
+  const id = init.id, ps = init.part_size, n = init.parts;
+  inflight.set(id, 0);
+  try {
+    const parts = [];
+    for (let i = 0; i < n; i++) {
+      const blob = file.slice(i * ps, Math.min(file.size, (i + 1) * ps));
+      const res = await withRetry(() => putPart(`${base}/uploads/${id}/part?n=${i + 1}`, blob, (loaded) => {
+        inflight.set(id, i * ps + loaded); updateProgress();
+      }));
+      parts.push({ partNumber: res.partNumber, etag: res.etag });
+    }
+    await withRetry(() => api(`/uploads/${id}/complete`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ parts }) }));
+    if (visuals.thumb) await api(`/uploads/${id}/thumb`, { method: 'PUT', body: visuals.thumb }).catch(() => {});
+    if (visuals.preview) await api(`/uploads/${id}/preview`, { method: 'PUT', body: visuals.preview }).catch(() => {});
+  } catch (e) {
+    fetch(`${base}/uploads/${id}`, { method: 'DELETE' }).catch(() => {});
+    throw e;
+  } finally {
+    inflight.delete(id);
+  }
+  doneBytes += file.size;
+}
+function putPart(url, blob, onProgress) {
+  return new Promise((resolve, reject) => {
+    const x = new XMLHttpRequest();
+    x.open('PUT', url);
+    x.upload.onprogress = (e) => onProgress(e.loaded);
+    x.onload = () => {
+      if (x.status >= 200 && x.status < 300) resolve(JSON.parse(x.responseText));
+      else reject(Object.assign(new Error((() => { try { return JSON.parse(x.responseText).error; } catch { return `erreur ${x.status}`; } })()), { status: x.status }));
+    };
+    x.onerror = () => reject(new Error('connexion coupée'));
+    x.send(blob);
+  });
+}
+async function withRetry(fn, tries = 4) {
+  for (let i = 0; ; i++) {
+    try { return await fn(); }
+    catch (e) {
+      if (i >= tries - 1 || (e.status && e.status < 500 && e.status !== 408 && e.status !== 429)) throw e;
+      await new Promise((r) => setTimeout(r, 1000 * 2 ** i));
+    }
+  }
+}
+
+// ---- Vignettes générées sur l'appareil (l'original n'est jamais modifié) ----
+async function makeVisuals(file, kind) {
+  if (kind === 'video') return videoVisuals(file);
+  const src = await decodeImage(file);
+  const w = src.width, h = src.height;
+  const thumb = await toJpeg(src, 480, 0.8);
+  const preview = await toJpeg(src, 2048, 0.85);
+  src.close?.();
+  return { thumb, preview, width: w, height: h };
+}
+async function decodeImage(file) {
+  try { return await createImageBitmap(file, { imageOrientation: 'from-image' }); }
+  catch {
+    const url = URL.createObjectURL(file);
+    try {
+      const img = new Image(); img.decoding = 'async'; img.src = url;
+      await img.decode();
+      return { width: img.naturalWidth, height: img.naturalHeight, el: img, close: () => URL.revokeObjectURL(url) };
+    } catch (e) { URL.revokeObjectURL(url); throw e; }
+  }
+}
+function toJpeg(src, max, q) {
+  const w = src.width, h = src.height;
+  const s = Math.min(1, max / Math.max(w, h));
+  const c = document.createElement('canvas');
+  c.width = Math.round(w * s); c.height = Math.round(h * s);
+  const ctx = c.getContext('2d');
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(src.el || src, 0, 0, c.width, c.height);
+  return new Promise((r) => c.toBlob(r, 'image/jpeg', q));
+}
+function videoVisuals(file) {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const v = document.createElement('video');
+    v.muted = true; v.playsInline = true; v.preload = 'auto'; v.src = url;
+    let done = false;
+    const end = (r) => { if (done) return; done = true; URL.revokeObjectURL(url); v.removeAttribute('src'); v.load(); resolve(r); };
+    const timer = setTimeout(() => end({}), 8000);
+    v.onloadedmetadata = () => { v.currentTime = Math.min(0.5, (v.duration || 1) / 2); };
+    v.onseeked = async () => {
+      try {
+        const thumb = await toJpeg({ width: v.videoWidth, height: v.videoHeight, el: v }, 480, 0.8);
+        clearTimeout(timer);
+        end({ thumb, width: v.videoWidth, height: v.videoHeight, duration: v.duration });
+      } catch { end({ duration: v.duration }); }
+    };
+    v.onerror = () => { clearTimeout(timer); end({}); };
+  });
+}
+
+// ================== Sélection et téléchargement ==================
+$('#selBtn').onclick = () => setSelecting(true);
+function setSelecting(on) {
+  selecting = on; if (!on) selected.clear();
+  document.body.classList.toggle('selecting', on);
+  $('#selBar').classList.toggle('hidden', !on);
+  $('#toolbar').classList.toggle('hidden', on);
+  $('#selZip').classList.toggle('hidden', isTouch);
+  $('#selHint').classList.toggle('hidden', !canShareFiles);
+  $('#dock').classList.toggle('hidden', on);
+  updateSel(); render();
+}
+function updateSel() {
+  const n = selected.size;
+  $('#selCount').textContent = `${n} choisie${n > 1 ? 's' : ''}`;
+  $('#selSave').disabled = $('#selZip').disabled = n === 0;
+}
+$('#selAll').onclick = () => {
+  const list = visible();
+  if (list.every((m) => selected.has(m.id))) list.forEach((m) => selected.delete(m.id)); else list.forEach((m) => selected.add(m.id));
+  updateSel(); render();
+};
+// bouton pour sortir de la sélection
+const cancelBtn = document.createElement('button');
+cancelBtn.className = 'bare'; cancelBtn.innerHTML = `${icon('x')}<span class="sr">Annuler la sélection</span>`;
+cancelBtn.onclick = () => setSelecting(false);
+$('#selBar').prepend(cancelBtn);
+
+$('#grid').addEventListener('click', (e) => {
+  const t = e.target.closest('.tile'); if (!t) return;
+  if (selecting) {
+    selected.has(t.dataset.id) ? selected.delete(t.dataset.id) : selected.add(t.dataset.id);
+    t.classList.toggle('sel'); updateSel();
+  } else openViewer(Number(t.dataset.i));
+});
+
+const origUrl = (m, dl) => `${base}/media/${m.id}/original${dl ? '?dl=1' : ''}`;
+$('#selSave').onclick = () => saveItems(state.media.filter((m) => selected.has(m.id)), $('#selSave'));
+$('#selZip').onclick = () => zipItems(state.media.filter((m) => selected.has(m.id)));
+
+async function saveItems(items, btn) {
+  if (!items.length) return;
+  if (!canShareFiles) { items.forEach((m, i) => setTimeout(() => dl(m), i * 400)); return; }
+  // iOS exige un geste juste avant le partage : on prépare, puis on redemande un tap.
+  const html = btn.innerHTML, handler = btn.onclick;
+  btn.disabled = true;
+  try {
+    const files = [];
+    for (const [i, m] of items.entries()) {
+      btn.textContent = `Préparation ${i + 1} sur ${items.length}`;
+      const b = await (await fetch(origUrl(m))).blob();
+      files.push(new File([b], m.name, { type: m.type || b.type }));
+    }
+    if (!navigator.canShare({ files })) throw new Error('unsupported');
+    btn.disabled = false; btn.innerHTML = `${icon('share')}Prêt, touche ici`;
+    await new Promise((resolve) => { btn.onclick = async () => { try { await navigator.share({ files }); } catch {} resolve(); }; });
+  } catch {
+    items.forEach((m, i) => setTimeout(() => dl(m), i * 400));
+  } finally {
+    btn.disabled = false; btn.innerHTML = html; btn.onclick = handler;
+  }
+}
+function dl(m) {
+  const a = document.createElement('a'); a.href = origUrl(m, true); a.download = m.name;
+  document.body.appendChild(a); a.click(); a.remove();
+}
+async function zipItems(items) {
+  if (!items.length) return;
+  const { downloadZip } = await import('/client-zip.js');
+  const seen = new Map();
+  const uniq = (n) => { const c = seen.get(n) || 0; seen.set(n, c + 1); return c ? n.replace(/(\.[^.]*)?$/, ` (${c})$1`) : n; };
+  async function* entries() {
+    for (const m of items) yield { name: uniq(m.name), input: await fetch(origUrl(m)), lastModified: new Date(m.taken_at || m.created_at) };
+  }
+  const fname = `${state.album.title.replace(/[\\/:*?"<>|]/g, '_')}.zip`;
+  toast('Préparation du zip…');
+  const resp = downloadZip(entries());
+  if (window.showSaveFilePicker) {
+    try {
+      const h = await showSaveFilePicker({ suggestedName: fname });
+      await resp.body.pipeTo(await h.createWritable());
+      toast('Zip enregistré'); return;
+    } catch (e) { if (e.name === 'AbortError') return; }
+  }
+  const blob = await resp.blob();
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = fname; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+}
+
+// ================== Visionneuse ==================
+let vIndex = -1, vList = [];
+const browserImg = /^image\/(jpeg|png|gif|webp|avif)$/;
+function openViewer(i) {
+  vList = visible(); vIndex = i;
+  $('#viewer').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+  showItem();
+  $('#vClose').focus();
+}
+function closeViewer() {
+  $('#viewer').classList.add('hidden');
+  document.body.style.overflow = '';
+  $('#vStage').querySelectorAll('img,video').forEach((e) => e.remove());
+  const tile = $(`.tile[data-i="${vIndex}"]`);
+  vIndex = -1;
+  tile?.focus();
+}
+function showItem() {
+  const m = vList[vIndex]; if (!m) return closeViewer();
+  const stage = $('#vStage');
+  stage.querySelectorAll('img,video').forEach((e) => e.remove());
+  let el;
+  if (m.kind === 'video') {
+    el = document.createElement('video');
+    el.controls = true; el.playsInline = true; el.preload = 'metadata';
+    if (m.has_thumb) el.poster = `${base}/media/${m.id}/thumb`;
+    el.src = origUrl(m);
+    el.onerror = () => { $('#vMeta').textContent = 'Ce navigateur ne sait pas lire cette vidéo : enregistre-la pour la voir.'; };
+  } else {
+    el = document.createElement('img');
+    el.alt = m.uploader ? `Photo de ${m.uploader}` : 'Photo';
+    el.src = m.has_preview ? `${base}/media/${m.id}/preview` : browserImg.test(m.type) ? origUrl(m) : m.has_thumb ? `${base}/media/${m.id}/thumb` : origUrl(m);
+  }
+  stage.prepend(el);
+  $('#vCount').textContent = `${vIndex + 1} / ${vList.length}`;
+  const date = new Date(m.taken_at || m.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+  $('#vWho').textContent = m.uploader || 'Anonyme';
+  $('#vMeta').textContent = `${date} · ${fmtBytes(m.size)}`;
+  $('#vDel').classList.toggle('hidden', !(state.admin || (m.owner_hash && m.owner_hash === ownerHash)));
+  $('#vPrev').classList.toggle('hidden', vIndex === 0);
+  $('#vNext').classList.toggle('hidden', vIndex === vList.length - 1);
+  const nx = vList[vIndex + 1];
+  if (nx && nx.kind === 'image' && nx.has_preview) new Image().src = `${base}/media/${nx.id}/preview`;
+}
+const go = (d) => { const n = vIndex + d; if (n >= 0 && n < vList.length) { vIndex = n; showItem(); } };
+$('#vClose').onclick = closeViewer;
+$('#vPrev').onclick = () => go(-1);
+$('#vNext').onclick = () => go(1);
+$('#vSave').onclick = () => saveItems([vList[vIndex]], $('#vSave'));
+$('#vDel').onclick = async () => {
+  const m = vList[vIndex];
+  if (!confirm('Retirer ce fichier de l\'album ? C\'est définitif.')) return;
+  try {
+    await api(`/media/${m.id}`, { method: 'DELETE', headers: { 'x-owner-key': ownerKey } });
+    state.media = state.media.filter((x) => x.id !== m.id);
+    vList = vList.filter((x) => x.id !== m.id);
+    render();
+    if (!vList.length) closeViewer(); else { vIndex = Math.min(vIndex, vList.length - 1); showItem(); }
+    toast('Retiré de l\'album');
+  } catch (e) { toast(e.message); }
+};
+addEventListener('keydown', (e) => {
+  if (vIndex < 0) { if (e.key === 'Escape' && selecting) setSelecting(false); return; }
+  if (e.key === 'Escape') closeViewer();
+  if (e.key === 'ArrowLeft') go(-1);
+  if (e.key === 'ArrowRight') go(1);
+});
+let tx = null, ty = null;
+$('#vStage').addEventListener('touchstart', (e) => { tx = e.touches[0].clientX; ty = e.touches[0].clientY; }, { passive: true });
+$('#vStage').addEventListener('touchend', (e) => {
+  if (tx == null) return;
+  const dx = e.changedTouches[0].clientX - tx, dy = e.changedTouches[0].clientY - ty;
+  if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) go(dx < 0 ? 1 : -1);
+  else if (dy > 90 && Math.abs(dy) > Math.abs(dx)) closeViewer();
+  tx = ty = null;
+});
+
+setInterval(() => { if (!document.hidden && vIndex < 0 && !selecting && running === 0) load(); }, 20000);
+load();
+</script>
+</body>
+</html>

@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#1d3fd1" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#122a8f" media="(prefers-color-scheme: dark)">
+<title>Les photos de Tonton Tibs</title>
+<link rel="preload" href="/fonts/sofia-sans-extra-condensed-latin-900-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/app.css">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+<div class="wrap">
+  <section id="login" class="login hidden">
+    <p class="brand">Les photos de Tonton Tibs</p>
+    <h1 class="display" style="margin-top:24px">Réservé à Tonton</h1>
+    <form id="loginForm">
+      <label for="pw" class="sr">Mot de passe</label>
+      <input id="pw" type="password" placeholder="Mot de passe" autocomplete="current-password" required>
+      <button class="ink cta" type="submit">Entrer</button>
+      <p id="loginErr" class="err hidden" role="alert"></p>
+    </form>
+  </section>
+
+  <main id="dash" class="hidden">
+    <div class="admin-head">
+      <span class="brand" style="flex:1">Les photos de Tonton Tibs</span>
+      <button class="bare" id="logout">Se déconnecter</button>
+    </div>
+    <h1 class="display admin-title">Mes albums</h1>
+    <form id="create" class="create">
+      <label for="newTitle" class="sr">Nom du nouvel album</label>
+      <input id="newTitle" type="text" placeholder="Noël 2026 chez Mamie" maxlength="120">
+      <button class="ink" type="submit"><svg class="i"><use href="/icons.svg#camera"/></svg>Créer l'album</button>
+    </form>
+    <div id="albums" class="cards"></div>
+    <section id="empty" class="empty hidden">
+      <h2 class="display">Aucun album</h2>
+      <p>Crée le premier au-dessus, puis envoie le lien dans le groupe de la famille.</p>
+    </section>
+  </main>
+</div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const icon = (n) => `<svg class="i"><use href="/icons.svg#${n}"/></svg>`;
+const api = async (path, opts = {}) => {
+  const r = await fetch('/api' + path, { headers: { 'content-type': 'application/json' }, ...opts, body: opts.body ? JSON.stringify(opts.body) : undefined });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw Object.assign(new Error(data.error || 'Erreur'), { status: r.status });
+  return data;
+};
+function toast(msg) {
+  document.querySelectorAll('.toast').forEach((t) => t.remove());
+  const t = document.createElement('div'); t.className = 'toast'; t.setAttribute('role', 'status'); t.textContent = msg;
+  document.body.appendChild(t); setTimeout(() => t.remove(), 2400);
+}
+const fmtBytes = (b) => b < 1e6 ? `${Math.max(1, Math.round(b / 1e3))} Ko` : b < 1e7 ? `${(b / 1e6).toFixed(1).replace('.', ',')} Mo` : b < 1e9 ? `${(b / 1e6).toFixed(0)} Mo` : `${(b / 1e9).toFixed(1).replace('.', ',')} Go`;
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+async function boot() {
+  const { admin } = await api('/me');
+  $('#login').classList.toggle('hidden', admin);
+  $('#dash').classList.toggle('hidden', !admin);
+  if (admin) load(); else $('#pw').focus();
+}
+$('#loginForm').onsubmit = async (e) => {
+  e.preventDefault();
+  try { await api('/login', { method: 'POST', body: { password: $('#pw').value } }); boot(); }
+  catch (err) { $('#loginErr').textContent = err.message; $('#loginErr').classList.remove('hidden'); }
+};
+$('#logout').onclick = async () => { await api('/logout', { method: 'POST' }); boot(); };
+$('#create').onsubmit = async (e) => {
+  e.preventDefault();
+  const title = $('#newTitle').value.trim();
+  if (!title) return $('#newTitle').focus();
+  await api('/admin/albums', { method: 'POST', body: { title } });
+  $('#newTitle').value = '';
+  toast('Album créé, il ne reste qu\'à partager le lien');
+  load();
+};
+
+async function load() {
+  const { albums } = await api('/admin/albums');
+  $('#empty').classList.toggle('hidden', albums.length > 0);
+  $('#albums').innerHTML = albums.map((a) => {
+    const cover = a.cover ? `<img src="/api/a/${a.token}/media/${a.cover}/thumb" alt="" loading="lazy">` : icon('image');
+    const date = new Date(a.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+    return `
+    <article class="card" data-id="${a.id}" data-token="${a.token}" data-title="${esc(a.title)}">
+      <a class="cover" href="/a/${a.token}" aria-label="Ouvrir ${esc(a.title)}">${cover}</a>
+      <div>
+        <h2 class="name">${esc(a.title)}</h2>
+        <div class="stats">
+          <span>${a.count ? `${a.count} fichier${a.count > 1 ? 's' : ''} · ${fmtBytes(a.bytes)}` : 'Vide pour l\'instant'}</span>
+          <span>${date}</span>
+          <span class="pill ${a.uploads_open ? 'open' : 'shut'}">${a.uploads_open ? 'Ajouts ouverts' : 'Ajouts fermés'}</span>
+        </div>
+      </div>
+        <div class="actions">
+          <button class="ink" data-act="share">${icon('share')}Partager le lien</button>
+          <button data-act="copy">${icon('copy')}Copier</button>
+        </div>
+        <div class="more">
+          <a class="btn bare" href="/a/${a.token}">Voir l'album</a>
+          <button class="bare" data-act="toggle">${a.uploads_open ? 'Fermer les ajouts' : 'Rouvrir les ajouts'}</button>
+          <button class="bare" data-act="rename">Renommer</button>
+          <button class="bare" data-act="rotate">Nouveau lien</button>
+          <button class="bare danger" data-act="delete">Supprimer</button>
+        </div>
+    </article>`;
+  }).join('');
+}
+
+$('#albums').addEventListener('click', async (e) => {
+  const el = e.target.closest('[data-act]'); if (!el) return;
+  const card = el.closest('.card');
+  const { id, token, title } = card.dataset;
+  const link = `${location.origin}/a/${token}`;
+  const open = card.querySelector('.pill').classList.contains('open');
+  switch (el.dataset.act) {
+    case 'share':
+      if (navigator.share) { try { await navigator.share({ title, text: `Mets tes photos et vidéos de « ${title} » ici, en pleine qualité :`, url: link }); } catch {} break; }
+    // sans menu de partage : on copie
+    case 'copy':
+      try { await navigator.clipboard.writeText(link); toast('Lien copié'); } catch { prompt('Copie ce lien :', link); }
+      break;
+    case 'toggle':
+      await api(`/admin/albums/${id}`, { method: 'PATCH', body: { uploads_open: !open } });
+      toast(open ? 'Album en lecture seule' : 'Ajouts rouverts'); load(); break;
+    case 'rename': {
+      const t = prompt('Nouveau nom de l\'album', title);
+      if (t && t.trim()) { await api(`/admin/albums/${id}`, { method: 'PATCH', body: { title: t.trim() } }); load(); }
+      break;
+    }
+    case 'rotate':
+      if (confirm('Créer un nouveau lien ? L\'ancien ne marchera plus.')) { await api(`/admin/albums/${id}/rotate-link`, { method: 'POST' }); toast('Nouveau lien prêt'); load(); }
+      break;
+    case 'delete':
+      if (confirm(`Supprimer « ${title} » et toutes ses photos et vidéos ? C'est définitif.`)) {
+        el.disabled = true; await api(`/admin/albums/${id}`, { method: 'DELETE' }); toast('Album supprimé'); load();
+      }
+      break;
+  }
+});
+boot();
+</script>
+</body>
+</html>

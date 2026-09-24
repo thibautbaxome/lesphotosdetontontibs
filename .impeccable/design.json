@@ -1,0 +1,380 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-23T19:51:36+00:00",
+  "title": "Design System: Les photos de Tonton Tibs",
+  "extensions": {
+    "colorMeta": {
+      "paper": {
+        "role": "primary",
+        "displayName": "Papier cobalt",
+        "canonical": "oklch(45.6% 0.225 266.1)",
+        "tonalRamp": [
+          "#010036",
+          "#071865",
+          "#193598",
+          "#2c53ce",
+          "#4373ff",
+          "#6c9dff",
+          "#98c5ff",
+          "#c5edff"
+        ]
+      },
+      "paper-deep": {
+        "role": "neutral",
+        "displayName": "Aplat dense",
+        "canonical": "oklch(40.0% 0.199 266.2)",
+        "tonalRamp": [
+          "#010231",
+          "#0a1c5d",
+          "#1e388e",
+          "#3356c2",
+          "#4b77f6",
+          "#739fff",
+          "#9ec6ff",
+          "#cbedff"
+        ]
+      },
+      "paper-press": {
+        "role": "neutral",
+        "displayName": "Zone foulée",
+        "canonical": "oklch(36.2% 0.176 266.4)",
+        "tonalRamp": [
+          "#01052c",
+          "#0d1e57",
+          "#223b86",
+          "#3859b7",
+          "#517aea",
+          "#79a0ff",
+          "#a3c7ff",
+          "#cfedff"
+        ]
+      },
+      "paper-night": {
+        "role": "primary",
+        "displayName": "Papier de nuit",
+        "canonical": "oklch(34.8% 0.168 266.2)",
+        "tonalRamp": [
+          "#01052b",
+          "#0e1f55",
+          "#233c82",
+          "#3a5ab3",
+          "#537be5",
+          "#7ba1ff",
+          "#a5c7ff",
+          "#d0eeff"
+        ],
+        "note": "Remplace paper sous prefers-color-scheme: dark."
+      },
+      "paper-night-deep": {
+        "role": "neutral",
+        "displayName": "Aplat dense de nuit",
+        "note": "Remplace paper-deep en mode sombre."
+      },
+      "paper-night-press": {
+        "role": "neutral",
+        "displayName": "Zone foulée de nuit",
+        "note": "Remplace paper-press en mode sombre."
+      },
+      "ink": {
+        "role": "secondary",
+        "displayName": "Encre tournesol",
+        "canonical": "oklch(86.0% 0.168 87.8)",
+        "tonalRamp": [
+          "#180600",
+          "#391f00",
+          "#5d3b00",
+          "#845900",
+          "#ac7900",
+          "#cb9e15",
+          "#eac467",
+          "#ffeba2"
+        ]
+      },
+      "ink-press": {
+        "role": "secondary",
+        "displayName": "Encre tournesol foulée",
+        "canonical": "oklch(80.3% 0.165 84.3)",
+        "tonalRamp": [
+          "#190500",
+          "#3b1e00",
+          "#5f3900",
+          "#875700",
+          "#af7600",
+          "#ce9c1e",
+          "#edc36a",
+          "#ffeaa4"
+        ]
+      },
+      "white": {
+        "role": "neutral",
+        "displayName": "Encre blanche"
+      },
+      "soft": {
+        "role": "neutral",
+        "displayName": "Blanc teinté",
+        "canonical": "oklch(87.4% 0.062 275.0)",
+        "tonalRamp": [
+          "#080a17",
+          "#202437",
+          "#3b405a",
+          "#585f80",
+          "#7780a8",
+          "#9ba3c7",
+          "#c0c8e7",
+          "#e7edff"
+        ]
+      },
+      "soft-night": {
+        "role": "neutral",
+        "displayName": "Blanc teinté de nuit",
+        "note": "Remplace soft en mode sombre."
+      },
+      "rule": {
+        "role": "neutral",
+        "displayName": "Filet",
+        "note": "Blanc à 28 %, traits de 2px."
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Titre de l'album et titres de page, capitales jaunes pleine largeur."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Nom de chaque album dans la liste admin."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Libellé du CTA fixe ; prénom dans la visionneuse (24px)."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Texte courant, 34ch max en état vide."
+      },
+      "guest": {
+        "displayName": "Guest",
+        "purpose": "Prénoms de la liste des invités (23px dès 900px)."
+      },
+      "button": {
+        "displayName": "Button",
+        "purpose": "Libellés de boutons."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Ligne de faits, statistiques, marque, notes de filtre."
+      }
+    },
+    "shadows": [],
+    "motion": [
+      {
+        "name": "ease-print",
+        "value": "cubic-bezier(.16, 1, .3, 1)",
+        "purpose": "Courbe unique de toutes les transitions et animations."
+      },
+      {
+        "name": "develop",
+        "value": "1.4s ease-print, from { filter: blur(14px) saturate(0); opacity: .4 }",
+        "purpose": "Une nouvelle vignette se développe du flou désaturé à la netteté."
+      },
+      {
+        "name": "inkin",
+        "value": "1.2s ease-print, from { color: ink; transform: translateY(4px) }",
+        "purpose": "Un nouveau prénom prend l'encre jaune avant de redevenir blanc."
+      },
+      {
+        "name": "toast",
+        "value": ".4s ease-print, from { opacity: 0; translateY(10px) }",
+        "purpose": "Entrée du toast et des panneaux de la barre d'envoi."
+      },
+      {
+        "name": "fade",
+        "value": ".25s ease-print",
+        "purpose": "Ouverture de la visionneuse."
+      },
+      {
+        "name": "press",
+        "value": "transform .12s ease-print; translateY(1px) scale(.985)",
+        "purpose": "Appui sur un bouton."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "animation/transition-duration: .01ms",
+        "purpose": "Tout le mouvement s'éteint sous prefers-reduced-motion."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "admin-stack",
+        "value": "max-width: 560px"
+      },
+      {
+        "name": "grid-fill",
+        "value": "min-width: 600px"
+      },
+      {
+        "name": "guest-large",
+        "value": "min-width: 900px"
+      },
+      {
+        "name": "landscape-short",
+        "value": "max-height: 500px"
+      },
+      {
+        "name": "container",
+        "value": "1180px"
+      }
+    ],
+    "focus": {
+      "value": "outline: 3px solid var(--ink); outline-offset: 3px",
+      "purpose": "Anneau de focus global."
+    },
+    "scrim": {
+      "value": "linear-gradient(to top, var(--paper) 55%, transparent)",
+      "purpose": "Fondu fonctionnel sous la barre d'envoi fixe ; retiré en paysage bas."
+    }
+  },
+  "components": [
+    {
+      "name": "Bouton contour",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Bouton secondaire par défaut : filet blanc 2px sur papier.",
+      "html": "<div class=\"ds-paper\"><button class=\"ds-btn\"><svg viewBox=\"0 0 24 24\"><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\"/><path d=\"m7 10 5 5 5-5\"/><path d=\"M12 15V3\"/></svg>Zip</button></div>",
+      "css": ".ds-paper{background:#1d3fd1;padding:16px;} .ds-btn{appearance:none;font:700 16px/1 var(--text,sans-serif);display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 16px;border-radius:0;cursor:pointer;border:2px solid #fff;background:transparent;color:#fff;transition:background .15s,color .15s,border-color .15s,transform .12s cubic-bezier(.16,1,.3,1);} .ds-btn:hover{background:rgba(255,255,255,.1);} .ds-btn:active{transform:translateY(1px) scale(.985);} .ds-btn:focus-visible{outline:3px solid #ffc928;outline-offset:3px;} .ds-btn svg{width:1.2em;height:1.2em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}"
+    },
+    {
+      "name": "Bouton encre",
+      "kind": "button",
+      "refersTo": "button-ink",
+      "description": "Action primaire : aplat jaune, texte cobalt.",
+      "html": "<div class=\"ds-paper\"><button class=\"ds-btn ds-ink\"><svg viewBox=\"0 0 24 24\"><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\"/><path d=\"m7 10 5 5 5-5\"/><path d=\"M12 15V3\"/></svg>Enregistrer</button></div>",
+      "css": ".ds-paper{background:#1d3fd1;padding:16px;} .ds-btn{appearance:none;font:700 16px/1 var(--text,sans-serif);display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 16px;border-radius:0;cursor:pointer;border:2px solid #fff;background:transparent;color:#fff;transition:background .15s,color .15s,border-color .15s,transform .12s cubic-bezier(.16,1,.3,1);} .ds-btn:hover{background:rgba(255,255,255,.1);} .ds-btn:active{transform:translateY(1px) scale(.985);} .ds-btn:focus-visible{outline:3px solid #ffc928;outline-offset:3px;} .ds-btn svg{width:1.2em;height:1.2em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;} .ds-ink{background:#ffc928;border-color:#ffc928;color:#1d3fd1;} .ds-ink:hover{background:#f0b400;border-color:#f0b400;}"
+    },
+    {
+      "name": "Bouton nu",
+      "kind": "button",
+      "refersTo": "button-bare",
+      "description": "Action de barre d'outils, sans contour.",
+      "html": "<div class=\"ds-paper\"><button class=\"ds-btn ds-bare\"><svg viewBox=\"0 0 24 24\"><path d=\"M20 6 9 17l-5-5\"/></svg>Sélectionner</button></div>",
+      "css": ".ds-paper{background:#1d3fd1;padding:16px;} .ds-btn{appearance:none;font:700 16px/1 var(--text,sans-serif);display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 16px;border-radius:0;cursor:pointer;border:2px solid #fff;background:transparent;color:#fff;transition:background .15s,color .15s,border-color .15s,transform .12s cubic-bezier(.16,1,.3,1);} .ds-btn:hover{background:rgba(255,255,255,.1);} .ds-btn:active{transform:translateY(1px) scale(.985);} .ds-btn:focus-visible{outline:3px solid #ffc928;outline-offset:3px;} .ds-btn svg{width:1.2em;height:1.2em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;} .ds-bare{border-color:transparent;padding:0 10px;}"
+    },
+    {
+      "name": "CTA J'apporte mes photos",
+      "kind": "button",
+      "refersTo": "cta",
+      "description": "Le geste principal, fixé en bas de page, pleine largeur.",
+      "html": "<div class=\"ds-paper\"><button class=\"ds-btn ds-ink ds-cta\"><svg viewBox=\"0 0 24 24\"><path d=\"M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z\"/><circle cx=\"12\" cy=\"13\" r=\"3.5\"/></svg>J'apporte mes photos</button></div>",
+      "css": ".ds-paper{background:#1d3fd1;padding:16px;} .ds-btn{appearance:none;font:700 16px/1 var(--text,sans-serif);display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 16px;border-radius:0;cursor:pointer;border:2px solid #fff;background:transparent;color:#fff;transition:background .15s,color .15s,border-color .15s,transform .12s cubic-bezier(.16,1,.3,1);} .ds-btn:hover{background:rgba(255,255,255,.1);} .ds-btn:active{transform:translateY(1px) scale(.985);} .ds-btn:focus-visible{outline:3px solid #ffc928;outline-offset:3px;} .ds-btn svg{width:1.2em;height:1.2em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;} .ds-ink{background:#ffc928;border-color:#ffc928;color:#1d3fd1;} .ds-ink:hover{background:#f0b400;border-color:#f0b400;} .ds-cta{width:100%;min-height:62px;font:900 26px/1 var(--display,'Arial Narrow',sans-serif);text-transform:uppercase;letter-spacing:.01em;} .ds-cta svg{width:26px;height:26px;stroke-width:2.4;}"
+    },
+    {
+      "name": "Champ prénom",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Champ sur zone foulée, contour jaune au focus.",
+      "html": "<div class=\"ds-paper\"><input class=\"ds-input\" type=\"text\" placeholder=\"Ton prénom\"></div>",
+      "css": ".ds-paper{background:#1d3fd1;padding:16px;} .ds-input{font:600 17px/1.2 var(--text,sans-serif);color:#fff;background:#142c98;border:2px solid transparent;border-radius:0;padding:0 14px;min-height:50px;width:100%;box-sizing:border-box;caret-color:#ffc928;} .ds-input::placeholder{color:#c9d3ff;opacity:.8;} .ds-input:focus{outline:none;border-color:#ffc928;}"
+    },
+    {
+      "name": "Liste des invités",
+      "kind": "nav",
+      "refersTo": "guest-name",
+      "description": "Composant signature : prénoms-filtres imprimés sous le titre.",
+      "html": "<div class=\"ds-paper ds-guests\"><span class=\"ds-with\">avec</span><button class=\"ds-guest\" aria-pressed=\"false\"><span class=\"ds-n\">Tatie Sophie</span><small>3</small></button><span class=\"ds-comma\">,</span><button class=\"ds-guest\" aria-pressed=\"true\"><span class=\"ds-n\">Mamie</span><small>2</small></button><span class=\"ds-comma\">,</span><button class=\"ds-guest\" aria-pressed=\"false\"><span class=\"ds-n\">Thibaut</span><small>3</small></button></div>",
+      "css": ".ds-paper{background:#1d3fd1;padding:16px;} .ds-guests{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 4px;} .ds-with{font:600 18px/1.2 var(--text,sans-serif);color:#c9d3ff;margin-right:4px;} .ds-guest{appearance:none;border:0;background:none;color:#fff;cursor:pointer;padding:4px 2px;font:700 18px/1.2 var(--text,sans-serif);transition:color .2s;} .ds-guest .ds-n{text-decoration:underline;text-decoration-thickness:2px;text-decoration-color:rgba(255,255,255,.28);text-underline-offset:5px;transition:text-decoration-color .2s;} .ds-guest small{font-size:13px;color:#c9d3ff;font-weight:600;margin-left:4px;font-variant-numeric:tabular-nums;} .ds-guest:hover .ds-n{text-decoration-color:#ffc928;} .ds-guest[aria-pressed=true]{color:#ffc928;} .ds-guest[aria-pressed=true] .ds-n{text-decoration-color:#ffc928;} .ds-guest:focus-visible{outline:3px solid #ffc928;outline-offset:3px;} .ds-comma{color:#c9d3ff;margin:0 6px 0 -2px;}"
+    },
+    {
+      "name": "En-tête du carton",
+      "kind": "custom",
+      "refersTo": "display",
+      "description": "Phrase d'invitation, titre en capitales jaunes, ligne de faits, filet de fermeture.",
+      "html": "<div class=\"ds-paper\"><header class=\"ds-invite\"><p class=\"ds-lead\">Tonton Tibs t'invite à partager tes photos de</p><h1 class=\"ds-display\">Noël 2026 chez Mamie</h1><div class=\"ds-facts\"><span>septembre 2026</span><i></i><span>7 photos</span><i></i><span>1 vidéo</span></div></header></div>",
+      "css": ".ds-paper{background:#1d3fd1;padding:16px;color:#fff;} .ds-invite{padding:6px 0 22px;border-bottom:2px solid rgba(255,255,255,.28);} .ds-lead{font:600 18px/1.45 var(--text,sans-serif);margin:0 0 16px;} .ds-display{font-family:var(--display,'Arial Narrow',sans-serif);font-weight:900;text-transform:uppercase;color:#ffc928;font-size:clamp(3.1rem,13vw,6rem);line-height:.88;letter-spacing:-.01em;margin:0;text-wrap:balance;} .ds-facts{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin-top:16px;font:600 15px/1.45 var(--text,sans-serif);} .ds-facts i{display:inline-block;width:5px;height:5px;background:#ffc928;border-radius:50%;}"
+    },
+    {
+      "name": "Vignette sélectionnable",
+      "kind": "card",
+      "refersTo": "tile",
+      "description": "Carré à coins droits sur zone foulée, case ronde jaune une fois choisie.",
+      "html": "<div class=\"ds-paper ds-grid\"><button class=\"ds-tile\"><span class=\"ds-badge\">▶ 0:03</span></button><button class=\"ds-tile ds-sel\"><span class=\"ds-check\"><svg viewBox=\"0 0 24 24\"><path d=\"M20 6 9 17l-5-5\"/></svg></span></button><button class=\"ds-tile\"><span class=\"ds-check\"><svg viewBox=\"0 0 24 24\"><path d=\"M20 6 9 17l-5-5\"/></svg></span></button></div>",
+      "css": ".ds-paper{background:#1d3fd1;padding:16px;} .ds-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;} .ds-tile{position:relative;aspect-ratio:1;background:linear-gradient(135deg,#e8a04a,#c2456b);border:0;padding:0;border-radius:0;cursor:pointer;overflow:hidden;} .ds-tile:focus-visible{outline:3px solid #ffc928;outline-offset:3px;} .ds-badge{position:absolute;left:0;bottom:0;background:#1d3fd1;color:#fff;font:700 12px/1 var(--text,sans-serif);padding:6px 8px;} .ds-check{position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:50%;border:2px solid #fff;background:rgba(10,18,70,.35);display:grid;place-items:center;color:#1d3fd1;box-sizing:border-box;} .ds-check svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;opacity:0;} .ds-sel .ds-check{background:#ffc928;border-color:#ffc928;} .ds-sel .ds-check svg{opacity:1;} .ds-sel{filter:saturate(.7) brightness(.8);}"
+    },
+    {
+      "name": "Pastille d'état",
+      "kind": "chip",
+      "refersTo": "pill",
+      "description": "État ouvert (point jaune) ou fermé (cercle au trait) dans l'admin.",
+      "html": "<div class=\"ds-paper\"><span class=\"ds-pill ds-open\">Ajouts ouverts</span> <span class=\"ds-pill ds-shut\">Ajouts fermés</span></div>",
+      "css": ".ds-paper{background:#1d3fd1;padding:16px;} .ds-pill{display:inline-flex;align-items:center;gap:6px;font:700 13px/1.2 var(--text,sans-serif);padding:4px 8px;border-radius:0;background:#142c98;color:#fff;} .ds-open::before{content:'';width:8px;height:8px;border-radius:50%;background:#ffc928;} .ds-shut::before{content:'';width:8px;height:8px;border-radius:50%;border:2px solid #c9d3ff;box-sizing:border-box;}"
+    },
+    {
+      "name": "File d'envoi",
+      "kind": "card",
+      "refersTo": "panel",
+      "description": "Panneau en aplat dense au-dessus du CTA avec barre de progression jaune.",
+      "html": "<div class=\"ds-paper\"><div class=\"ds-panel\"><div class=\"ds-qtop\"><span>Envoi 2 sur 5</span><span class=\"ds-pct\">42 %</span></div><div class=\"ds-bar\"><i></i></div><div class=\"ds-hint\">Garde cette page ouverte pendant l'envoi.</div></div></div>",
+      "css": ".ds-paper{background:#1d3fd1;padding:16px;color:#fff;} .ds-panel{background:#1733b0;padding:14px 16px;font:700 16px/1.3 var(--text,sans-serif);} .ds-qtop{display:flex;align-items:baseline;gap:10px;} .ds-pct{margin-left:auto;font-size:14px;color:#c9d3ff;font-variant-numeric:tabular-nums;} .ds-bar{height:8px;background:#142c98;margin-top:10px;overflow:hidden;} .ds-bar i{display:block;height:100%;width:42%;background:#ffc928;} .ds-hint{font:600 14px/1.4 var(--text,sans-serif);color:#c9d3ff;margin-top:8px;}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Le carton d'invitation deux encres",
+    "overview": "Chaque album est un carton de fête imprimé : un papier cobalt saturé qui remplit tout l'écran, et seulement deux encres posées dessus, un jaune tournesol et un blanc. Le lien de partage est l'invitation ; la page le dit littéralement (« Tonton Tibs t'invite à partager tes photos de… ») puis imprime le nom de la fête en capitales condensées jaunes, pleine largeur. Tout ce qui n'est pas une photo appartient au carton : filets imprimés, aplats plus denses, coins droits, aucune carte qui flotte.\n\nLa densité est celle d'un imprimé, pas d'une application : un en-tête typographique généreux, puis une grille de photos serrée qui prend le relais, les photos de la famille devenant le seul élément polychrome de la page. L'interface reste dans ses deux encres pour que les photos, elles, aient toutes les couleurs. Le système refuse explicitement la grille blanche façon Google Photos et le « cinéma noir » des visionneuses sombres.\n\nLe mouvement imite l'impression et le développement : un nouveau prénom « prend l'encre » en jaune avant de redevenir blanc, une nouvelle photo se développe du flou désaturé à la netteté. Tout le mouvement s'éteint sous `prefers-reduced-motion`.",
+    "keyCharacteristics": [
+      "Papier cobalt plein cadre, jamais de fond blanc ni noir.",
+      "Deux encres seulement : jaune pour l'action et l'accent, blanc pour le texte et les traits.",
+      "Capitales ultra-condensées très grasses pour les titres, sans empattement lisible pour le texte.",
+      "Coins droits partout ; seuls les points imprimés sont ronds.",
+      "Profondeur par aplats de bleu plus dense, jamais par ombre.",
+      "Icônes au trait 2px, arrondies aux extrémités, héritant de la couleur du texte."
+    ],
+    "rules": [
+      {
+        "name": "La règle des deux encres",
+        "body": "Rien d'autre que le jaune et le blanc ne s'imprime sur le cobalt. Pas de rouge pour le danger, pas de vert pour le succès : une action destructive est un texte blanc souligné, un état « ouvert » est un point jaune, un état « fermé » un cercle au trait.",
+        "section": "colors"
+      },
+      {
+        "name": "La règle du papier plein cadre",
+        "body": "Le cobalt va jusqu'aux bords, `html` compris, et la visionneuse elle-même reste sur le papier (zone foulée), jamais sur du noir.",
+        "section": "colors"
+      },
+      {
+        "name": "La règle de l'encre rare",
+        "body": "Le jaune marque ce qu'on peut toucher ou ce qui est choisi. Un texte jaune est soit le titre, soit un élément actif ; il ne sert jamais à décorer un paragraphe.",
+        "section": "colors"
+      },
+      {
+        "name": "La règle du titre imprimé",
+        "body": "Toute face `Sofia Display` est en capitales, en 900, interlignage sous 1. Jamais en casse mixte, jamais en graisse plus légère.",
+        "section": "typography"
+      },
+      {
+        "name": "La règle de la phrase d'invitation",
+        "body": "L'en-tête se lit comme une phrase : une ligne d'invitation en Sofia Text 600 au-dessus du titre, puis « avec » suivi des prénoms séparés par des virgules. Pas d'étiquette en petites capitales espacées au-dessus du titre.",
+        "section": "typography"
+      },
+      {
+        "name": "La règle de l'aplat",
+        "body": "Un élément qui doit se distinguer change de densité de bleu ou s'inverse en encre ; il ne flotte jamais. Pas d'ombre portée, pas de carte surélevée, pas de flou d'arrière-plan.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** poser toute nouvelle surface sur le papier cobalt (`paper`, `paper-night` en mode sombre), bord à bord.",
+      "**Do** réserver l'encre jaune (`ink`) à l'action principale, à l'état choisi et au titre.",
+      "**Do** composer les titres en `Sofia Display` 900, capitales, interlignage 0.88 à 1.",
+      "**Do** tracer séparateurs, contours et soulignements à 2px, en blanc (`white`) ou en filet (`rule`).",
+      "**Do** exprimer la profondeur par les trois densités du cobalt (`paper`, `paper-deep`, `paper-press`).",
+      "**Do** garder les icônes au trait 2px en `currentColor`, depuis le sprite `icons.svg`.",
+      "**Do** écrire en français, en tutoiement, avec des phrases d'invitation plutôt que des étiquettes."
+    ],
+    "donts": [
+      "**Don't** introduire une troisième encre (rouge d'erreur, vert de succès, gris neutre) : la règle des deux encres tient même pour le danger.",
+      "**Don't** mettre un fond blanc ou noir, ni une visionneuse « cinéma » noire.",
+      "**Don't** arrondir les coins des boutons, champs, vignettes ou panneaux ; seuls les points d'impression sont ronds.",
+      "**Don't** ajouter d'ombre portée, de carte flottante ni de flou d'arrière-plan.",
+      "**Don't** composer la face condensée en casse mixte ou en graisse inférieure à 900.",
+      "**Don't** placer de petite étiquette espacée en capitales au-dessus d'un titre."
+    ]
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "name": "tribu",
+  "version": "1.0.0",
+  "description": "Albums photo/vidéo partagés en pleine qualité",
+  "scripts": {
+    "setup": "bash setup.sh",
+    "dev": "wrangler d1 execute tribu --local --file=schema.sql && wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.137.0"
+  },
+  "private": true
+}

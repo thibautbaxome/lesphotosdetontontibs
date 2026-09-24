@@ -3,6 +3,12 @@ main = "src/worker.js"
 account_id = "fe7eaf69dc1c96623ac4c92b3b282285"
 compatibility_date = "2026-09-01"
 
+# Nom de domaine (branché automatiquement à chaque déploiement, HTTPS compris)
+routes = [
+  { pattern = "lesphotosdetontontibs.com", custom_domain = true },
+  { pattern = "www.lesphotosdetontontibs.com", custom_domain = true },
+]
+
 [assets]
 directory = "./public"
 binding = "ASSETS"
@@ -19,9 +25,3 @@ database_id = "81d2a2a2-363f-45c5-9633-b47fc19d999f"
 
 # Le mot de passe admin se définit en secret, jamais ici :
 #   npx wrangler secret put ADMIN_PASSWORD
-
-# Nom de domaine (branché automatiquement à chaque déploiement, HTTPS compris)
-routes = [
-  { pattern = "lesphotosdetontontibs.com", custom_domain = true },
-  { pattern = "www.lesphotosdetontontibs.com", custom_domain = true },
-]

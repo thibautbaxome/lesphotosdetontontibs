@@ -67,7 +67,13 @@
       <div class="bar"><i id="qBar"></i></div>
       <div id="qHint" class="q-hint">Garde cette page ouverte pendant l'envoi.</div>
     </div>
+    <div id="prep" class="panel hidden" role="status" aria-live="polite">
+      <div class="q-top"><span>Ton téléphone prépare tes photos…</span></div>
+      <div class="bar indet"><i></i></div>
+      <div class="q-hint">Les photos rangées dans iCloud doivent d'abord être rapatriées sur le téléphone. Quelques secondes de patience, l'envoi démarre tout seul.</div>
+    </div>
     <label id="addBtn" class="btn ink cta pick"><svg class="i"><use href="/icons.svg#camera"/></svg>J'apporte mes photos<input id="file" type="file" multiple accept="image/*,video/*,image/heic,image/heif,.heic,.heif,.mov,.mp4" aria-label="Choisir mes photos et vidéos"></label>
+    <p id="iosTip" class="tip hidden">Astuce iPhone : dans le sélecteur, touche <b>Options</b> puis <b>Actuel</b>. C'est plus rapide, et tes photos partent en qualité d'origine.</p>
     <p id="closedNote" class="closed-note hidden"><svg class="i"><use href="/icons.svg#lock"/></svg>Les ajouts sont fermés sur cet album</p>
   </div>
 </div>
@@ -204,6 +210,7 @@ function render() {
   });
   $('#grid').replaceChildren(frag);
   known = new Set(m.map((x) => x.id));
+  queueBackfill();
 }
 
 $('#guests').addEventListener('click', (e) => {
@@ -211,6 +218,48 @@ $('#guests').addEventListener('click', (e) => {
   filter = filter === g.dataset.name ? null : g.dataset.name;
   render();
 });
+
+// ================== Miniatures vidéo manquantes ==================
+// Les vidéos envoyées sans miniature en reçoivent une, calculée par le premier visiteur qui les voit.
+const bfTried = new Set();
+let bfBusy = false;
+const bfObserver = 'IntersectionObserver' in window ? new IntersectionObserver((entries) => {
+  entries.forEach((e) => { if (e.isIntersecting) { bfObserver.unobserve(e.target); bfQueue.push(e.target.dataset.id); runBackfill(); } });
+}, { rootMargin: '200px' }) : null;
+const bfQueue = [];
+function queueBackfill() {
+  if (!bfObserver) return;
+  document.querySelectorAll('.tile').forEach((el) => {
+    const m = state.media.find((x) => x.id === el.dataset.id);
+    if (m && m.kind === 'video' && !m.has_thumb && !bfTried.has(m.id)) { bfTried.add(m.id); bfObserver.observe(el); }
+  });
+}
+async function runBackfill() {
+  if (bfBusy || running) return;
+  const id = bfQueue.shift(); if (!id) return;
+  bfBusy = true;
+  try {
+    const m = state.media.find((x) => x.id === id);
+    if (m && !m.has_thumb) {
+      const r = await captureFrame(origUrl(m));
+      if (r.thumb) {
+        const q = new URLSearchParams();
+        if (r.width) q.set('w', r.width); if (r.height) q.set('h', r.height); if (r.duration) q.set('d', r.duration);
+        await api(`/uploads/${m.id}/thumb?${q}`, { method: 'PUT', body: r.thumb, headers: { 'x-owner-key': ownerKey } });
+        m.has_thumb = 1; if (r.duration) m.duration = r.duration;
+        const el = document.querySelector(`.tile[data-id="${m.id}"]`);
+        if (el) {
+          const ph = el.querySelector('.ph');
+          if (ph) ph.outerHTML = `<img src="${base}/media/${m.id}/thumb" alt="" decoding="async">`;
+          const badge = el.querySelector('.badge'); if (badge && r.duration) badge.innerHTML = `${icon('play')}${fmtDur(r.duration)}`;
+          el.classList.add('new');
+        }
+      }
+    }
+  } catch (e) { console.warn('miniature vidéo', e); }
+  bfBusy = false;
+  if (bfQueue.length) runBackfill();
+}
 
 // ================== Ajout de fichiers ==================
 const queue = [];
@@ -234,7 +283,19 @@ $('#whoOk').onclick = () => {
 };
 $('#who').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('#whoOk').click(); });
 
+// Pendant qu'iOS prépare les fichiers (iCloud, conversion), la page ne reçoit rien :
+// on affiche un indicateur dès le tap, qui apparaît quand le sélecteur se referme.
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+let prepTimer = null;
+function showPrep() { $('#prep').classList.remove('hidden'); clearTimeout(prepTimer); prepTimer = setTimeout(hidePrep, 120000); }
+function hidePrep() { $('#prep').classList.add('hidden'); clearTimeout(prepTimer); }
+$('#file').addEventListener('click', () => { if (isIOS || matchMedia('(hover: none)').matches) showPrep(); });
+$('#file').addEventListener('cancel', hidePrep);
+addEventListener('focus', () => { if (!$('#prep').classList.contains('hidden')) { clearTimeout(prepTimer); prepTimer = setTimeout(hidePrep, 60000); } });
+if (isIOS && !store.get('tribu_sent')) $('#iosTip').classList.remove('hidden');
+
 $('#file').onchange = (e) => {
+  hidePrep();
   const files = [...e.target.files];
   e.target.value = '';
   if (!files.length) return;
@@ -277,6 +338,7 @@ function finishQueue() {
   $('#qLabel').textContent = ko ? `${plural(ok, 'fichier envoyé', 'fichiers envoyés')}, ${ko} en échec` : `Merci ${store.get('tribu_name') || ''} !`;
   $('#qPct').textContent = '';
   $('#qBar').style.transform = 'scaleX(1)';
+  if (ok) { store.set('tribu_sent', '1'); $('#iosTip').classList.add('hidden'); }
   $('#qHint').textContent = ko ? 'Réessaie avec les fichiers en échec, souvent une coupure réseau.' : `${plural(ok, 'fichier ajouté', 'fichiers ajoutés')} à l'album, en pleine qualité.`;
   totalBytes = doneBytes = filesTotal = filesDone = failed = 0;
   setTimeout(() => { if (running === 0 && !queue.length) $('#queue').classList.add('hidden'); }, 6000);
@@ -323,7 +385,7 @@ async function uploadFile(file) {
     if (visuals.width) q.set('w', visuals.width);
     if (visuals.height) q.set('h', visuals.height);
     if (visuals.duration) q.set('d', visuals.duration);
-    if (visuals.thumb) await api(`/uploads/${id}/thumb?${q}`, { method: 'PUT', body: visuals.thumb }).catch(() => {});
+    if (visuals.thumb) await api(`/uploads/${id}/thumb?${q}`, { method: 'PUT', body: visuals.thumb, headers: { 'x-owner-key': ownerKey } }).catch(() => {});
     if (visuals.preview) await api(`/uploads/${id}/preview`, { method: 'PUT', body: visuals.preview }).catch(() => {});
   } catch (e) {
     fetch(`${base}/uploads/${id}`, { method: 'DELETE' }).catch(() => {});
@@ -388,22 +450,47 @@ function toJpeg(src, max, q) {
   return new Promise((r) => c.toBlob(r, 'image/jpeg', q));
 }
 function videoVisuals(file) {
+  const url = URL.createObjectURL(file);
+  return captureFrame(url).finally(() => URL.revokeObjectURL(url));
+}
+// Capture d'une image de la vidéo, robuste sur iOS : l'élément est dans la page,
+// muet, en lecture inline, et on attend qu'une vraie image soit décodée avant de dessiner.
+function captureFrame(url) {
   return new Promise((resolve) => {
-    const url = URL.createObjectURL(file);
     const v = document.createElement('video');
-    v.muted = true; v.playsInline = true; v.preload = 'auto'; v.src = url;
-    let done = false;
-    const end = (r) => { if (done) return; done = true; URL.revokeObjectURL(url); v.removeAttribute('src'); v.load(); resolve(r); };
-    const timer = setTimeout(() => end({}), 8000);
-    v.onloadedmetadata = () => { v.currentTime = Math.min(0.5, (v.duration || 1) / 2); };
-    v.onseeked = async () => {
+    v.muted = true; v.defaultMuted = true; v.playsInline = true;
+    v.setAttribute('muted', ''); v.setAttribute('playsinline', ''); v.setAttribute('webkit-playsinline', '');
+    v.preload = 'auto';
+    v.style.cssText = 'position:fixed;left:0;bottom:0;width:2px;height:2px;opacity:0.01;pointer-events:none;z-index:-1';
+    document.body.appendChild(v);
+    let done = false, drawing = false;
+    const end = (r) => {
+      if (done) return; done = true; clearTimeout(timer);
+      try { v.pause(); } catch {}
+      v.removeAttribute('src'); v.load(); v.remove(); resolve(r);
+    };
+    const timer = setTimeout(() => end(v.duration ? { duration: v.duration } : {}), 20000);
+    const draw = async () => {
+      if (drawing || done || !v.videoWidth) return; drawing = true;
       try {
         const thumb = await toJpeg({ width: v.videoWidth, height: v.videoHeight, el: v }, 480, 0.8);
-        clearTimeout(timer);
         end({ thumb, width: v.videoWidth, height: v.videoHeight, duration: v.duration });
       } catch { end({ duration: v.duration }); }
     };
-    v.onerror = () => { clearTimeout(timer); end({}); };
+    const whenFrame = () => {
+      if (v.requestVideoFrameCallback) v.requestVideoFrameCallback(() => draw());
+      else setTimeout(draw, 120);
+    };
+    v.addEventListener('loadeddata', () => {
+      const t = Math.min(0.5, (v.duration || 1) / 3);
+      if (t > 0.05) { v.currentTime = t; v.addEventListener('seeked', whenFrame, { once: true }); }
+      else whenFrame();
+      // iOS ne peint parfois aucune image tant que la vidéo n'a pas démarré : lecture muette brève
+      setTimeout(() => { if (!done) v.play().then(() => { whenFrame(); v.addEventListener('timeupdate', () => { v.pause(); draw(); }, { once: true }); }).catch(() => {}); }, 900);
+    }, { once: true });
+    v.onerror = () => end({});
+    v.src = url;
+    v.load();
   });
 }
 

@@ -149,7 +149,8 @@ async function publicApi(request, env, album, parts, m) {
 
   // --- Uploads ---
   if (parts[0] === 'uploads') {
-    if (!album.uploads_open && !admin) throw new HttpError(403, "L'ajout de photos est fermé sur cet album");
+    const isVisual = parts[2] === 'thumb' || parts[2] === 'preview';
+    if (!album.uploads_open && !admin && !isVisual) throw new HttpError(403, "L'ajout de photos est fermé sur cet album");
 
     if (!parts[1] && m === 'POST') {
       const b = await request.json();
@@ -199,6 +200,12 @@ async function publicApi(request, env, album, parts, m) {
     }
 
     if ((parts[2] === 'thumb' || parts[2] === 'preview') && m === 'PUT') {
+      // Une vignette manquante peut être fournie par n'importe quel visiteur (vidéos sans miniature) ;
+      // en remplacer une existante est réservé à l'admin ou à l'auteur du fichier.
+      if (media[`has_${parts[2]}`] && !admin) {
+        const ownerKey = request.headers.get('x-owner-key');
+        if (!ownerKey || !media.owner_hash || (await sha(ownerKey)) !== media.owner_hash) throw new HttpError(409, 'Vignette déjà présente');
+      }
       const buf = await request.arrayBuffer();
       if (buf.byteLength > 8 * 1024 * 1024) throw new HttpError(413, 'Vignette trop lourde');
       await env.BUCKET.put(`albums/${album.id}/${media.id}/${parts[2]}.jpg`, buf, { httpMetadata: { contentType: 'image/jpeg' } });

@@ -226,3 +226,7 @@ input:focus { outline: none; border-color: var(--ink); }
 .pick:focus-within { outline: 3px solid var(--ink); outline-offset: 3px; }
 #dlAll { padding: 0 8px 0 0; }
 @keyframes rise { from { opacity: 0; transform: translateY(10px); } }
+.bar.indet > i { width: 35%; transform: translateX(-100%); animation: indet 1.3s var(--ease) infinite; }
+@keyframes indet { from { transform: translateX(-100%); } to { transform: translateX(300%); } }
+.tip { margin: 10px 2px 0; font-size: 14px; font-weight: 600; color: var(--soft); text-align: center; }
+.tip b { color: var(--white); }
